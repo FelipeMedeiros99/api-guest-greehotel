@@ -10,9 +10,9 @@ app.post("/", async(req, res)=>{
     const {userData, loginData} = req.body;
     try{
         await main(userData, loginData)
-        res.send(200)
+        res.status(200).send("Automação finalizada")
     }catch(e){
-        res.send(e).status(400)
+        res.status(400).send(e)
     }
 })
 
