@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import puppeteer, { TimeoutError } from "puppeteer";
 
 async function pageConfig() {
     const browser = await puppeteer.launch({
@@ -58,22 +58,22 @@ async function clickAtNewGuest(page) {
 }
 
 async function validIfUserExists(page, userData) {
-    console.log(userData)
     try{
         const elements = {
-            browserGuestTag: ".modal-body .form-control.ng-untouched.ng-pristine.ng-valid",
-
-            // await page.type("input[name='name']", userData.cpf)
+            browserGuestInput: ".modal-body .form-control.ng-untouched.ng-pristine.ng-valid",
+            localizedGuests: ".table-responsive .cursor-pointer.ng-star-inserted"
         }
 
-        // TODO
-        await page.waitForSelector(elements.browserGuestTag, {visible: true})
-        await page.type(elements.browserGuestTag, userData.cpf)
-        // console.log(await page.$$(elements.browserGuestInput))
-        // await page.waitForSelector(`.table-responsive .cursor-pointer.ng-star-inserted`, {timeout: 1000})
-        // const find = await page.$(".table-responsive .cursor-pointer.ng-star-inserted")
-        // return find
+        await page.waitForSelector(elements.browserGuestInput, {visible: true})
+        await page.type(elements.browserGuestInput, userData.cpf)
+        
+        await page.waitForSelector(elements.localizedGuests, {timeout: 1000, visible: true})
+        const find = await page.$(elements.localizedGuests)
+        return !!find
     }catch(e){
+        if(e instanceof TimeoutError){
+            return false
+        }
         throw {message: "Erro ao tentar buscar usuário", error: e}
     }
 }
@@ -88,9 +88,7 @@ async function openRegisterGuest(page, userData) {
 
             for (let cell of cells) {
                 const text = await cell.evaluate(el => el.innerText);
-                console.log(text)
-
-                console.log(text.includes(userData.cpf))
+                
                 if (text.includes(userData.cpf)) {
                     await cell.click();
                     break; 
@@ -101,7 +99,6 @@ async function openRegisterGuest(page, userData) {
         } else {
             // await page.waitForSelector(".col-12.mt-05.mb-05 .btn.btn-sm.btn-primary")
             await page.click(".col-12.mt-05.mb-05 .btn.btn-sm.btn-primary")
-            console.log("clicked")
             fillData(page, userData)
         }
 
@@ -142,7 +139,7 @@ export async function main(userData, loginData) {
         await openPageAndLogin(page, loginData)
         await goToReservePage(page)
         await clickAtNewGuest(page)
-        await validIfUserExists(page, userData)
+        console.log(await validIfUserExists(page, userData))
 
         // await openRegisterGuest(page, userData)
         // await validIfUserExists(page, userData)
