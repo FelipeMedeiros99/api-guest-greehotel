@@ -7,7 +7,10 @@ app.use(cors())
 app.use(json())
 
 app.post("/", async(req, res)=>{
-    const {userData, loginData} = req.body;
+    let {userData, loginData} = req.body;
+    console.log(userData)
+    // userData = {name: userData.name[0] || "", cep: userData.cep[0]|| "", phone: userData.phone[0]|| "", cpf: userData.cpf[0]|| ""}
+    console.log(userData) 
     try{
         await main(userData, loginData)
         res.status(200).send("Automação finalizada")

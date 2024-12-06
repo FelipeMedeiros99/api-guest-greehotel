@@ -1,10 +1,8 @@
-import puppeteer, { } from "puppeteer";
-import { timeout } from "puppeteer";
+import puppeteer from "puppeteer";
 
 async function pageConfig() {
     const browser = await puppeteer.launch({
-        headless: false,
-        args: ["--disable-popup-blocking"]
+        headless: false
     })
     const page = await browser.newPage();
 
@@ -13,58 +11,76 @@ async function pageConfig() {
 
 async function openPageAndLogin(page, loginData) {
     try{
+        const loginPage = 'https://gree.hflow.com.br/authentication/login'
+        const elements = {
+            inputEmail: "input[formcontrolname='username']",
+            inputPassword: "input[formcontrolname='password']",
+            buttonLogin: ".btn"
+        }
 
-        await page.goto('https://gree.hflow.com.br/authentication/login')
-        
-        await page.waitForSelector("input[formcontrolname='username']")
-        
-        await page.type("input[formcontrolname='username']", `${loginData.email}`);
-        await page.type("input[formcontrolname='password']", `${loginData.password}`)
-        await page.click(".btn")
+        await page.goto(loginPage)
+        await page.waitForSelector(elements.inputEmail)
+        await page.type(elements.inputEmail, `${loginData.email}`);
+        await page.type(elements.inputPassword, `${loginData.password}`)
+        await page.click(elements.buttonLogin)
+
     }catch(e){
-        throw `erro ao efetuar login ${e}`
+        throw {message: `erro ao efetuar login`, error: e}
     }
 }
 
 async function goToReservePage(page) {
     try{
-
-        await page.waitForSelector(".navbar-container")
-        await page.goto("https://gree.hflow.com.br/GREE/pms/reservations/new")
+        const elements = {
+            navBar: ".navbar-container",
+            reserveLink: "https://gree.hflow.com.br/GREE/pms/reservations/new"
+        };
+  
+        await page.waitForSelector(elements.navBar)
+        await page.goto(elements.reserveLink)
+  
     }catch(e){
-        throw "erro ao ir para tela de reservas"
+        throw {message: `erro ao ir para tela de reservas`, error: e} 
     }
 
 }
 
-
 async function clickAtNewGuest(page) {
-
-    await page.waitForSelector(".card.card-size.card-backgroud")
-    await page.click(".card.card-size.card-backgroud")
+    try{
+        const elements = {
+            addNewGuestButton: ".card.card-size.card-backgroud"
+        }
+        await page.waitForSelector(elements.addNewGuestButton)
+        await page.click(elements.addNewGuestButton)
+    }catch(e){
+        throw {message: `Erro ao clicar em novo usuário`, error: e}
+    }
 }
 
 async function validIfUserExists(page, userData) {
+    console.log(userData)
     try{
+        const elements = {
+            browserGuestTag: ".modal-body .form-control.ng-untouched.ng-pristine.ng-valid",
 
-        // await page.waitForSelector(".swal2-popup.swal2-modal.swal2-icon-error.swal2-show")
-        // const errorBox = await page.$$(".swal2-popup.swal2-modal.swal2-icon-error.swal2-show")
+            // await page.type("input[name='name']", userData.cpf)
+        }
 
-        await page.waitForSelector(".form-control.ng-untouched.ng-pristine.ng-valid")
-        await page.type("input[name='name'", userData.cpf)
-        await page.waitForSelector(`.table-responsive .cursor-pointer.ng-star-inserted`, {timeout: 1000})
-        const find = await page.$(".table-responsive .cursor-pointer.ng-star-inserted")
-        return find
+        // TODO
+        await page.waitForSelector(elements.browserGuestTag, {visible: true})
+        await page.type(elements.browserGuestTag, userData.cpf)
+        // console.log(await page.$$(elements.browserGuestInput))
+        // await page.waitForSelector(`.table-responsive .cursor-pointer.ng-star-inserted`, {timeout: 1000})
+        // const find = await page.$(".table-responsive .cursor-pointer.ng-star-inserted")
+        // return find
     }catch(e){
-        // console.log(e)
-        return false
+        throw {message: "Erro ao tentar buscar usuário", error: e}
     }
 }
 
 
 async function openRegisterGuest(page, userData) {
     try {
-        await clickAtNewGuest(page)
         const userExists = await validIfUserExists(page, userData)
 
         if (userExists) {
@@ -94,8 +110,7 @@ async function openRegisterGuest(page, userData) {
         // await fillData(page, userData)
 
     } catch (e) {
-        console.log("erro: ", e)
-        throw 'Erro ao clicar em usuário'
+        throw {message: `Erro ao clicar em usuário`, error: e}
     }
 
 }
@@ -117,17 +132,20 @@ async function fillData(page, userData) {
 
         await page.click(".modal-content .form-actions.border-0.right .p-element.btn.btn-loading.btn-success.btn-sm.p-button.p-component")
     } catch (e) {
-        throw "erro ao preencher dados do usuário"
+        throw {message: `erro ao preencher dados do usuário`, error: e}
     }
 }
 
 export async function main(userData, loginData) {
     try {
-        const page = await pageConfig()
+        const page = await pageConfig() 
         await openPageAndLogin(page, loginData)
         await goToReservePage(page)
-        await openRegisterGuest(page, userData)
+        await clickAtNewGuest(page)
         await validIfUserExists(page, userData)
+
+        // await openRegisterGuest(page, userData)
+        // await validIfUserExists(page, userData)
     } catch (e) {
         console.log(e)
     }
