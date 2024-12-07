@@ -1,6 +1,7 @@
 import puppeteer, { TimeoutError } from "puppeteer";
 
-async function pageConfig() {
+
+export async function pageConfig() {
     const browser = await puppeteer.launch({
         headless: false
     })
@@ -9,55 +10,56 @@ async function pageConfig() {
     return page
 }
 
-async function openPageAndLogin(page, loginData) {
+export async function openPageAndLogin(page, loginData) {
+    const loginPage = 'https://gree.hflow.com.br/authentication/login'
+    const elements = {
+        inputEmail: "input[formcontrolname='username']",
+        inputPassword: "input[formcontrolname='password']",
+        buttonLogin: ".btn"
+    }
+
     try{
-        const loginPage = 'https://gree.hflow.com.br/authentication/login'
-        const elements = {
-            inputEmail: "input[formcontrolname='username']",
-            inputPassword: "input[formcontrolname='password']",
-            buttonLogin: ".btn"
-        }
 
         await page.goto(loginPage)
-        await page.waitForSelector(elements.inputEmail)
+        await page.waitForSelector(elements.inputEmail, {timeout: 1000})
         await page.type(elements.inputEmail, `${loginData.email}`);
         await page.type(elements.inputPassword, `${loginData.password}`)
         await page.click(elements.buttonLogin)
-
     }catch(e){
-        throw {message: `erro ao efetuar login`, error: e}
+        throw {message: "Erro ao fazer login", status: 404, error: e}
     }
+
 }
 
-async function goToReservePage(page) {
+export async function goToReservePage(page) {
     try{
         const elements = {
-            navBar: ".navbar-container",
+            navBar: ".navbar-container .sannjdkajsn",
             reserveLink: "https://gree.hflow.com.br/GREE/pms/reservations/new"
         };
-  
-        await page.waitForSelector(elements.navBar)
+        await page.waitForSelector(elements.navBar, {timeout: 7000})
         await page.goto(elements.reserveLink)
-  
     }catch(e){
-        throw {message: `erro ao ir para tela de reservas`, error: e} 
+        if(e instanceof TimeoutError){
+            const message = `Erro ao ir para tela de reservas. Verifique se não há mensagens de alerta do google ou se seu email e senha estão corretos e tente novamente.`
+            throw {message, status: 413, error: e}
+        }
     }
-
 }
 
-async function clickAtNewGuest(page) {
+export async function clickAtNewGuest(page) {
     try{
         const elements = {
             addNewGuestButton: ".card.card-size.card-backgroud"
         }
-        await page.waitForSelector(elements.addNewGuestButton)
+        await page.waitForSelector(elements.addNewGuestButton, {timeout: 5000})
         await page.click(elements.addNewGuestButton)
     }catch(e){
-        throw {message: `Erro ao clicar em novo usuário`, error: e}
+        throw {message: `Erro ao clicar em novo usuário, tente novamente.`, error: e}
     }
 }
 
-async function validIfUserExists(page, userData) {
+export async function validIfUserExists(page, userData) {
     try{
         const elements = {
             browserGuestInput: ".modal-body .form-control.ng-untouched.ng-pristine.ng-valid",
@@ -79,7 +81,7 @@ async function validIfUserExists(page, userData) {
 }
 
 
-async function openRegisterGuest(page, userData) {
+export async function openRegisterGuest(page, userData) {
     try {
         const userExists = await validIfUserExists(page, userData)
 
@@ -112,7 +114,7 @@ async function openRegisterGuest(page, userData) {
 
 }
 
-async function fillData(page, userData) {
+export async function fillData(page, userData) {
     try {
         const nameInput = ".form-group.mt-0.ng-star-inserted .col-md-10 .form-control.ng-untouched.ng-pristine.ng-valid"
         await page.$(nameInput)
