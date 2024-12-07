@@ -1,4 +1,4 @@
-import { clickAtNewGuest, goToReservePage, openPageAndLogin, pageConfig } from "../services/comands.js";
+import { clickAtNewGuest, goToReservePage, openPageAndLogin, openRegisterGuest, pageConfig, selectUserExisted, validIfUserExists } from "../services/comands.js";
 
 export async function automationMiddleware(req, res, next){
     
@@ -9,9 +9,10 @@ export async function automationMiddleware(req, res, next){
         await openPageAndLogin(page, loginData)
         await goToReservePage (page)
         await clickAtNewGuest (page)
-        // console.log(await validIfUserExists(page, userData))
-    
-        // await openRegisterGuest(page, userData)
+        if(await validIfUserExists(page, userData)){
+            return await selectUserExisted(page, userData)
+        }
+        await openRegisterGuest(page, userData)
         // await validIfUserExists(page, userData)
         // await main(userData, loginData)
         res.status(200).send("Automação finalizada")    
